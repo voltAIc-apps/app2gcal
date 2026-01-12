@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app2gcal
+  labels:
+    app: app2gcal
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: app2gcal
+  template:
+    metadata:
+      labels:
+        app: app2gcal
+    spec:
+      containers:
+        - name: app2gcal
+          image: app2gcal:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+              protocol: TCP
+          env:
+            - name: ENVIRONMENT
+              valueFrom:
+                configMapKeyRef:
+                  name: app2gcal-config
+                  key: environment
+            - name: DEFAULT_CALENDAR_ID
+              valueFrom:
+                configMapKeyRef:
+                  name: app2gcal-config
+                  key: default_calendar_id
+            - name: ALLOWED_ORIGINS
+              valueFrom:
+                configMapKeyRef:
+                  name: app2gcal-config
+                  key: allowed_origins
+            - name: GOOGLE_CREDENTIALS_JSON
+              valueFrom:
+                secretKeyRef:
+                  name: app2gcal-secret
+                  key: google_credentials_json
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
