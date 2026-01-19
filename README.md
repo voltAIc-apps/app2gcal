@@ -2,6 +2,9 @@
 
 Google Calendar Microservice - FastAPI-based REST API for managing calendar events.
 
+**Documentation**:
+https://cal.google.wapsol.de/docs
+
 ## Setup
 
 1. Copy `.env.example` to `.env`
