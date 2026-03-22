@@ -79,8 +79,6 @@ class CalendarService:
             event_body["attendees"] = [
                 {"email": email} for email in event_data.attendees
             ]
-            # Send email notifications to attendees
-            event_body["sendUpdates"] = "all"
 
         try:
             created_event = self.service.events().insert(

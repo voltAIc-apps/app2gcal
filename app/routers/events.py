@@ -37,9 +37,9 @@ async def create_event(event_data: EventCreate) -> EventResponse:
                 status_code=403,
                 detail="Insufficient permissions for calendar"
             )
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Calendar operation failed")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Calendar operation failed")
 
 
 @router.get("/{event_id}", response_model=EventResponse)
@@ -61,9 +61,9 @@ async def get_event(
     except HttpError as e:
         if e.resp.status == 404:
             raise HTTPException(status_code=404, detail="Event not found")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Calendar operation failed")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Calendar operation failed")
 
 
 @router.delete("/{event_id}", response_model=EventDelete)
@@ -86,6 +86,6 @@ async def delete_event(
     except HttpError as e:
         if e.resp.status == 404:
             raise HTTPException(status_code=404, detail="Event not found")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Calendar operation failed")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Calendar operation failed")

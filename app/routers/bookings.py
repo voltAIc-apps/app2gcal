@@ -2,6 +2,7 @@
 POST /api/v1/bookings — create booking end-to-end.
 Validates, writes calendar event with Meet, fires async scoopp research.
 """
+import hmac
 import logging
 import uuid
 from datetime import date, datetime, timedelta
@@ -26,7 +27,7 @@ WEEKDAY_NAMES = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Sam
 def _verify_api_key(x_api_key: str) -> None:
     """Compare API key against settings. Raises 401 on mismatch."""
     settings = get_settings()
-    if not settings.api_key or x_api_key != settings.api_key:
+    if not settings.api_key or not hmac.compare_digest(x_api_key, settings.api_key):
         raise HTTPException(status_code=401, detail="Invalid API key")
 
 
@@ -137,10 +138,14 @@ async def create_booking(
 
     description = "\n".join(desc_lines)
 
-    # Attendees
+    # Attendees — deduplicate while preserving order
     calendar_id = settings.google_calendar_id or settings.default_calendar_id
-    attendees = [calendar_id, consultant_email, req.visitor.email]
-    attendees += [str(a) for a in req.additional_attendees]
+    seen = set()
+    attendees = []
+    for email in [calendar_id, consultant_email, req.visitor.email] + [str(a) for a in req.additional_attendees]:
+        if email not in seen:
+            seen.add(email)
+            attendees.append(email)
 
     # 8. Create calendar event with Meet
     try:

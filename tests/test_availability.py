@@ -125,3 +125,21 @@ def test_availability_skips_weekends(mock_validate, mock_get_c, mock_cal, mock_s
     })
     assert resp.status_code == 200
     assert len(resp.json()["slots"]) == 0
+
+
+@patch("app.routers.availability.get_settings")
+@patch("app.routers.availability.consultant_loader.validate_url")
+@patch("app.routers.availability.consultant_loader.get_consultant_by_id", new_callable=AsyncMock)
+def test_availability_date_from_after_date_to(mock_get_c, mock_validate, mock_settings, client):
+    """date_from > date_to should return 422."""
+    mock_settings.return_value = _mock_settings()
+    mock_get_c.return_value = CONSULTANT
+
+    resp = client.get("/api/v1/availability", params={
+        "consultants_url": "https://simplify-erp.de/c.json",
+        "consultant_id": "anna-becker",
+        "date_from": "2026-03-30",
+        "date_to": "2026-03-23",
+    })
+    assert resp.status_code == 422
+    assert "date_from" in resp.json()["detail"]

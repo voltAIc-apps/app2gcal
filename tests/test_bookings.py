@@ -151,3 +151,40 @@ def test_url_blocked(mock_validate, mock_settings, client):
     mock_settings.return_value = _mock_settings()
     resp = client.post("/api/v1/bookings", json=VALID_BOOKING, headers={"X-API-Key": API_KEY})
     assert resp.status_code == 400
+
+
+# -- Time format validation --
+
+def test_invalid_time_format_rejected(client):
+    """Malformed time string rejected at model validation."""
+    body = {**VALID_BOOKING, "time": "25:00"}
+    resp = client.post("/api/v1/bookings", json=body, headers={"X-API-Key": "x"})
+    assert resp.status_code == 422
+
+
+def test_time_format_no_colon_rejected(client):
+    body = {**VALID_BOOKING, "time": "1400"}
+    resp = client.post("/api/v1/bookings", json=body, headers={"X-API-Key": "x"})
+    assert resp.status_code == 422
+
+
+# -- Attendee deduplication --
+
+@patch("app.routers.bookings.get_settings")
+@patch("app.routers.bookings.consultant_loader.validate_url")
+@patch("app.routers.bookings.consultant_loader.get_consultant_by_id", new_callable=AsyncMock)
+@patch("app.routers.bookings.calendar_service")
+def test_duplicate_attendees_deduplicated(mock_cal, mock_get_c, mock_validate, mock_settings, client):
+    mock_settings.return_value = _mock_settings()
+    mock_get_c.return_value = CONSULTANT
+    mock_cal.create_booking_event.return_value = {
+        "event_id": "evt-1", "html_link": "", "meet_link": "", "status": "confirmed",
+    }
+    # additional_attendees contains consultant email (duplicate)
+    body = {**VALID_BOOKING, "additional_attendees": ["anna@test.de"]}
+    resp = client.post("/api/v1/bookings", json=body, headers={"X-API-Key": API_KEY})
+    assert resp.status_code == 200
+    # Verify attendees list has no duplicates
+    call_args = mock_cal.create_booking_event.call_args
+    attendees = call_args.kwargs.get("attendees", [])
+    assert len(attendees) == len(set(attendees))

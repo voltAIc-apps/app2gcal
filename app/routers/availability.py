@@ -44,11 +44,13 @@ async def get_availability(
     if not consultant or not consultant.get("active", True):
         raise HTTPException(status_code=404, detail="Consultant not found or inactive")
 
-    # Date range defaults
+    # Date range defaults and validation
     if date_from is None:
         date_from = date.today()
     if date_to is None:
         date_to = date_from + timedelta(days=14)
+    if date_from > date_to:
+        raise HTTPException(status_code=422, detail="date_from must be before or equal to date_to")
 
     # Fetch calendar events for the range
     time_min = datetime(date_from.year, date_from.month, date_from.day, 0, 0, tzinfo=TZ_BERLIN)

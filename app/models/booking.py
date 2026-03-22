@@ -1,8 +1,9 @@
 """
 Pydantic models for consultant, availability and booking endpoints.
 """
+import re
 from typing import Optional
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, field_validator
 
 
 # -- Consultant models --
@@ -69,6 +70,16 @@ class BookingRequest(BaseModel):
     additional_attendees: list[EmailStr] = []
     honeypot: str = ""
     context: Optional[BookingContext] = None
+
+    @field_validator("time")
+    @classmethod
+    def validate_time_format(cls, v: str) -> str:
+        if not re.match(r"^\d{2}:\d{2}$", v):
+            raise ValueError("time must be in HH:MM format")
+        h, m = map(int, v.split(":"))
+        if h > 23 or m > 59:
+            raise ValueError("time must be a valid HH:MM value")
+        return v
 
 
 class BookingResponse(BaseModel):
