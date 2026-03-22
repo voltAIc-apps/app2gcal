@@ -11,7 +11,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import events
+from app.routers import events, consultants, availability, bookings
 from app.schemas.event import HealthResponse
 
 # Configure logging
@@ -53,6 +53,9 @@ app.add_middleware(
 
 # Include routers
 app.include_router(events.router)
+app.include_router(consultants.router)
+app.include_router(availability.router)
+app.include_router(bookings.router)
 
 
 @app.get("/health", response_model=HealthResponse, tags=["health"])

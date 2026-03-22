@@ -27,6 +27,18 @@ class Settings(BaseSettings):
     # Environment
     environment: str = "dev"  # dev, stag, prod
 
+    # Booking calendar ID (e.g. sales@simplify-erp.de)
+    google_calendar_id: str = ""
+
+    # Scoopp research service URL
+    scoopp_url: str = ""
+
+    # API key for authenticated endpoints (X-API-Key header)
+    api_key: str = ""
+
+    # SSRF allowlist for consultants_url (comma-separated URL prefixes)
+    consultants_url_allowlist: str = ""
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -42,6 +54,13 @@ class Settings(BaseSettings):
     def cors_origins(self) -> list[str]:
         """Parse CORS origins from comma-separated string."""
         return [origin.strip() for origin in self.allowed_origins.split(",")]
+
+    @property
+    def url_allowlist_prefixes(self) -> list[str]:
+        """Parse consultants URL allowlist from comma-separated prefixes."""
+        if not self.consultants_url_allowlist:
+            return []
+        return [p.strip() for p in self.consultants_url_allowlist.split(",") if p.strip()]
 
 
 @lru_cache

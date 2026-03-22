@@ -4,6 +4,7 @@ Google Calendar API service wrapper.
 from datetime import datetime, timedelta
 from typing import Optional
 import logging
+import uuid
 
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -145,6 +146,92 @@ class CalendarService:
 
         except HttpError as e:
             logger.error(f"Failed to get event {event_id}: {e}")
+            raise
+
+    def list_events(
+        self,
+        calendar_id: str,
+        time_min: datetime,
+        time_max: datetime
+    ) -> list[dict]:
+        """
+        List events in a time range. Returns raw event dicts.
+        Paginates through all results.
+        """
+        events = []
+        page_token = None
+        try:
+            while True:
+                result = self.service.events().list(
+                    calendarId=calendar_id,
+                    timeMin=time_min.isoformat(),
+                    timeMax=time_max.isoformat(),
+                    singleEvents=True,
+                    orderBy="startTime",
+                    pageToken=page_token
+                ).execute()
+                events.extend(result.get("items", []))
+                page_token = result.get("nextPageToken")
+                if not page_token:
+                    break
+        except HttpError as e:
+            logger.error(f"Failed to list events: {e}")
+            raise
+        return events
+
+    def create_booking_event(
+        self,
+        calendar_id: str,
+        summary: str,
+        description: str,
+        start_dt: datetime,
+        attendees: list[str]
+    ) -> dict:
+        """
+        Create a 30-min booking event with Google Meet.
+        Returns dict with event_id, html_link, meet_link, status.
+        """
+        end_dt = start_dt + timedelta(minutes=30)
+
+        event_body = {
+            "summary": summary,
+            "description": description,
+            "start": {
+                "dateTime": start_dt.isoformat(),
+                "timeZone": "Europe/Berlin",
+            },
+            "end": {
+                "dateTime": end_dt.isoformat(),
+                "timeZone": "Europe/Berlin",
+            },
+            "attendees": [{"email": email} for email in attendees],
+            "conferenceData": {
+                "createRequest": {
+                    "requestId": uuid.uuid4().hex,
+                    "conferenceSolutionKey": {"type": "hangoutsMeet"}
+                }
+            },
+        }
+
+        try:
+            created = self.service.events().insert(
+                calendarId=calendar_id,
+                body=event_body,
+                conferenceDataVersion=1,
+                sendUpdates="all"
+            ).execute()
+
+            logger.info(f"Created booking event: {created['id']}")
+
+            return {
+                "event_id": created["id"],
+                "html_link": created["htmlLink"],
+                "meet_link": created.get("hangoutLink", ""),
+                "status": created.get("status", "confirmed"),
+            }
+
+        except HttpError as e:
+            logger.error(f"Google Calendar API error (booking): {e}")
             raise
 
     def delete_event(
