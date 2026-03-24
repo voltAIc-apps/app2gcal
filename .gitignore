@@ -49,6 +49,12 @@ init_*.sql
 *.db
 *.sqlite3
 
+# Google service account credentials
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+
 # Logs
 *.log
 logs/
