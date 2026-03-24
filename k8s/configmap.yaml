@@ -2,7 +2,8 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: app2gcal-config
+  namespace: app2gcal
 data:
   environment: "prod"
   default_calendar_id: "ashantc@euroblaze.de"
-  allowed_origins: "https://simplify-erp.de"
+  allowed_origins: "https://simplify-erp.de,https://cal.google.wapsol.de"

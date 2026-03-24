@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: app2gcal
+  namespace: app2gcal
   labels:
     app: app2gcal
 spec:
@@ -14,9 +15,11 @@ spec:
       labels:
         app: app2gcal
     spec:
+      imagePullSecrets:
+        - name: harbor-re-cloud
       containers:
         - name: app2gcal
-          image: app2gcal:latest
+          image: crepo.re-cloud.io/llmhub/app2gcal:latest
           imagePullPolicy: Always
           ports:
             - containerPort: 8000
