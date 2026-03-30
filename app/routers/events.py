@@ -1,10 +1,13 @@
 """
 Calendar events API endpoints.
+Protected by X-API-Key header.
 """
+import hmac
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Header, HTTPException, Query
 from googleapiclient.errors import HttpError
 
+from app.config import get_settings
 from app.schemas.event import (
     EventCreate,
     EventResponse,
@@ -15,8 +18,18 @@ from app.services.calendar import calendar_service
 router = APIRouter(prefix="/api/v1/events", tags=["events"])
 
 
+def _verify_api_key(x_api_key: str) -> None:
+    """Compare API key against settings. Raises 401 on mismatch."""
+    settings = get_settings()
+    if not settings.api_key or not hmac.compare_digest(x_api_key, settings.api_key):
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
+
 @router.post("", response_model=EventResponse, status_code=201)
-async def create_event(event_data: EventCreate) -> EventResponse:
+async def create_event(
+    event_data: EventCreate,
+    x_api_key: str = Header(...),
+) -> EventResponse:
     """
     Create a new calendar event.
 
@@ -27,6 +40,7 @@ async def create_event(event_data: EventCreate) -> EventResponse:
     - **duration_minutes**: Duration in minutes
     - **attendees**: List of attendee emails (optional)
     """
+    _verify_api_key(x_api_key)
     try:
         return calendar_service.create_event(event_data)
     except HttpError as e:
@@ -48,7 +62,8 @@ async def get_event(
     calendar_id: Optional[str] = Query(
         default=None,
         description="Calendar ID (uses default if not specified)"
-    )
+    ),
+    x_api_key: str = Header(...),
 ) -> EventResponse:
     """
     Get a calendar event by ID.
@@ -56,6 +71,7 @@ async def get_event(
     - **event_id**: Google Calendar event ID
     - **calendar_id**: Optional calendar ID
     """
+    _verify_api_key(x_api_key)
     try:
         return calendar_service.get_event(event_id, calendar_id)
     except HttpError as e:
@@ -72,7 +88,8 @@ async def delete_event(
     calendar_id: Optional[str] = Query(
         default=None,
         description="Calendar ID (uses default if not specified)"
-    )
+    ),
+    x_api_key: str = Header(...),
 ) -> EventDelete:
     """
     Delete a calendar event.
@@ -80,6 +97,7 @@ async def delete_event(
     - **event_id**: Google Calendar event ID
     - **calendar_id**: Optional calendar ID
     """
+    _verify_api_key(x_api_key)
     try:
         calendar_service.delete_event(event_id, calendar_id)
         return EventDelete(event_id=event_id)

@@ -138,8 +138,9 @@ def test_booking_success(mock_cal, mock_get_c, mock_validate, mock_settings, cli
     assert data["meet_link"] == "https://meet.google.com/abc-def-ghi"
     assert "booking_id" in data
 
-    # Verify calendar was called with correct summary
+    # Verify calendar was called with consultant's email as calendar_id
     call_kwargs = mock_cal.create_booking_event.call_args
+    assert call_kwargs.kwargs.get("calendar_id") == "anna@test.de"
     assert "Anna Becker" in call_kwargs.kwargs.get("summary", "") or "Anna Becker" in str(call_kwargs)
 
 

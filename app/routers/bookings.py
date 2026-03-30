@@ -139,11 +139,17 @@ async def create_booking(
 
     description = "\n".join(desc_lines)
 
+    # Use consultant's personal calendar for the booking event
+    calendar_id = consultant_email
+
     # Attendees — deduplicate while preserving order
-    calendar_id = settings.google_calendar_id or settings.default_calendar_id
     seen = set()
     attendees = []
-    for email in [calendar_id, consultant_email, req.visitor.email] + [str(a) for a in req.additional_attendees]:
+    shared_calendar = settings.google_calendar_id
+    attendee_emails = [consultant_email, req.visitor.email]
+    if shared_calendar and shared_calendar != consultant_email:
+        attendee_emails.insert(0, shared_calendar)
+    for email in attendee_emails + [str(a) for a in req.additional_attendees]:
         if email not in seen:
             seen.add(email)
             attendees.append(email)

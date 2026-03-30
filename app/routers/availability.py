@@ -56,7 +56,8 @@ async def get_availability(
     time_min = datetime(date_from.year, date_from.month, date_from.day, 0, 0, tzinfo=TZ_BERLIN)
     time_max = datetime(date_to.year, date_to.month, date_to.day, 23, 59, 59, tzinfo=TZ_BERLIN)
 
-    calendar_id = settings.google_calendar_id or settings.default_calendar_id
+    # Use consultant's personal calendar for availability checks
+    calendar_id = consultant["email"]
     try:
         events = calendar_service.list_events(calendar_id, time_min, time_max)
     except Exception as e:

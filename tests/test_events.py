@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 
 from app.main import app
 
+API_KEY = "test-events-key"
+
 
 @pytest.fixture
 def client():
@@ -33,9 +35,13 @@ def test_root_endpoint(client):
     assert "docs" in data
 
 
+@patch("app.routers.events.get_settings")
 @patch("app.services.calendar.calendar_service.create_event")
-def test_create_event(mock_create, client):
+def test_create_event(mock_create, mock_settings, client):
     """Test event creation endpoint."""
+    s = MagicMock()
+    s.api_key = API_KEY
+    mock_settings.return_value = s
     from app.schemas.event import EventResponse
 
     mock_create.return_value = EventResponse(
@@ -52,7 +58,7 @@ def test_create_event(mock_create, client):
         "start_time": "2025-02-15T14:00:00+01:00",
         "duration_minutes": 60,
         "attendees": ["user@example.com"]
-    })
+    }, headers={"X-API-Key": API_KEY})
 
     assert response.status_code == 201
     data = response.json()
@@ -60,9 +66,13 @@ def test_create_event(mock_create, client):
     assert data["summary"] == "Test Webinar"
 
 
+@patch("app.routers.events.get_settings")
 @patch("app.services.calendar.calendar_service.get_event")
-def test_get_event(mock_get, client):
+def test_get_event(mock_get, mock_settings, client):
     """Test get event endpoint."""
+    s = MagicMock()
+    s.api_key = API_KEY
+    mock_settings.return_value = s
     from app.schemas.event import EventResponse
 
     mock_get.return_value = EventResponse(
@@ -74,18 +84,22 @@ def test_get_event(mock_get, client):
         status="confirmed"
     )
 
-    response = client.get("/api/v1/events/test123")
+    response = client.get("/api/v1/events/test123", headers={"X-API-Key": API_KEY})
     assert response.status_code == 200
     data = response.json()
     assert data["event_id"] == "test123"
 
 
+@patch("app.routers.events.get_settings")
 @patch("app.services.calendar.calendar_service.delete_event")
-def test_delete_event(mock_delete, client):
+def test_delete_event(mock_delete, mock_settings, client):
     """Test delete event endpoint."""
+    s = MagicMock()
+    s.api_key = API_KEY
+    mock_settings.return_value = s
     mock_delete.return_value = True
 
-    response = client.delete("/api/v1/events/test123")
+    response = client.delete("/api/v1/events/test123", headers={"X-API-Key": API_KEY})
     assert response.status_code == 200
     data = response.json()
     assert data["deleted"] is True

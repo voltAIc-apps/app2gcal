@@ -49,6 +49,9 @@ def test_availability_all_free(mock_validate, mock_get_c, mock_cal, mock_setting
     # 1 day x 2 slots = 2 slots
     assert len(data["slots"]) == 2
     assert all(s["available"] for s in data["slots"])
+    # Verify calendar queried using consultant's email, not shared calendar
+    mock_cal.list_events.assert_called_once()
+    assert mock_cal.list_events.call_args[0][0] == "anna@test.de"
 
 
 @patch("app.routers.availability.get_settings")
