@@ -78,8 +78,9 @@ async def create_booking(
     if booking_date.weekday() >= 5:
         raise HTTPException(status_code=422, detail="Date must be a working day (Mon-Fri)")
 
-    # 6. Validate time is in consultant's slots
-    if req.time not in consultant.get("slots", []):
+    # 6. Validate time is in consultant's schedule for this date
+    valid_slots = consultant_loader.expand_schedule_slots(consultant, booking_date)
+    if req.time not in valid_slots:
         raise HTTPException(status_code=422, detail="Time not in consultant's available slots")
 
     # 7. Build calendar event

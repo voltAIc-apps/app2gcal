@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     default_calendar_id: str = "ashantc@euroblaze.de"
 
     # CORS allowed origins (comma-separated)
-    allowed_origins: str = "http://localhost:5173,https://simplify-erp.de"
+    allowed_origins: str = "http://localhost:5173,http://10.0.99.1:5180,https://simplify-erp.de"
 
     # Server settings
     host: str = "0.0.0.0"

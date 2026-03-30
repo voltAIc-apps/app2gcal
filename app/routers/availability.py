@@ -60,18 +60,20 @@ async def get_availability(
     try:
         events = calendar_service.list_events(calendar_id, time_min, time_max)
     except Exception as e:
-        logger.error(f"Calendar list_events failed: {e}")
-        raise HTTPException(status_code=500, detail="Failed to query calendar")
+        # Graceful degradation: return all slots as available when calendar is unreachable
+        logger.warning(f"Calendar list_events failed, returning all slots as available: {e}")
+        events = []
 
     # Build slot availability
     consultant_name = consultant["name"].lower()
-    slot_times = consultant.get("slots", [])
     slots: list[AvailabilitySlot] = []
 
     current = date_from
     while current <= date_to:
         # Only working days (Mon=0 .. Fri=4)
         if current.weekday() < 5:
+            # Expand weekly schedule + exceptions into discrete slots for this date
+            slot_times = consultant_loader.expand_schedule_slots(consultant, current)
             for slot_time in slot_times:
                 # Check if any event at this slot mentions the consultant
                 available = True
